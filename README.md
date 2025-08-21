@@ -4,7 +4,7 @@ Um aplicativo desktop em Python para transcrição de áudio em tempo real com i
 
 ## ✨ Funcionalidades
 
-- **🎤 Gravação de Áudio Dupla**: Captura simultânea de microfone e áudio do sistema
+- **🎤 Gravação de Áudio Dupla**: Opção de captura simultânea de microfone e áudio do sistema
 - **📄 Processamento de Documentos**: Suporte para PDF, DOCX e TXT como contexto
 - **🤖 Integração Claude API**: Respostas inteligentes baseadas no documento fornecido
 - **🎵 Detecção Automática de Dispositivos**: Lista todos os dispositivos de áudio disponíveis
@@ -16,7 +16,7 @@ Um aplicativo desktop em Python para transcrição de áudio em tempo real com i
 ### 1. Clone ou baixe o projeto
 ```bash
 # Se usando git
-git clone <url-do-repositorio>
+git clone https://github.com/TonyCvo/Transcritor-para-TCC.git'
 
 # Ou simplesmente baixe os arquivos
 ```
@@ -80,7 +80,7 @@ python "iniciar.py"
 ## 🔧 Configuração de Áudio do Sistema
 
 ### Windows
-Para capturar áudio do sistema (música, vídeos, etc.):
+Para capturar áudio do sistema (conversa de reuniões, apresentações, música, vídeos, etc.):
 
 1. **Ativar Stereo Mix**:
    - Configurações de Som → Som → Configurações de Som
