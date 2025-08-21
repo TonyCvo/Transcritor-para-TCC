@@ -1,0 +1,29 @@
+# Dependências essenciais
+pyaudio>=0.2.11
+SpeechRecognition>=3.10.0
+anthropic>=0.7.0
+sounddevice>=0.4.6
+numpy>=1.21.0
+soundfile>=0.12.1
+
+# Dependências opcionais para documentos
+# Descomente as que você quiser usar:
+
+# Para PDF (escolha uma das opções abaixo):
+# PyMuPDF>=1.23.0  # Recomendado - mais rápido
+# PyPDF2>=3.0.0    # Alternativa
+# pdfplumber>=0.9.0 # Outra alternativa
+
+# Para documentos Word:
+# python-docx>=0.8.11
+
+# Dependências adicionais (já incluídas no Python padrão)
+# tkinter - GUI (incluído no Python)
+# threading - Threads (incluído no Python)
+# wave - Arquivos WAV (incluído no Python)
+# os - Sistema operacional (incluído no Python)
+# datetime - Data e hora (incluído no Python)
+# subprocess - Processos (incluído no Python)
+# platform - Plataforma (incluído no Python)
+# re - Expressões regulares (incluído no Python)
+# time - Tempo (incluído no Python)
