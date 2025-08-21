@@ -14,6 +14,7 @@ import platform
 import re
 import time
 import soundfile as sf
+from config import ANTHROPIC_API_KEY
 
 # Importações opcionais para funcionalidades específicas
 try:
@@ -56,7 +57,7 @@ class AudioTranscriberApp:
         
         # Cliente Claude API
         self.client = anthropic.Anthropic(
-            api_key="sua api key"
+            api_key = ANTHROPIC_API_KEY
         )
         
         # Otimização: Cache para respostas da API
@@ -343,134 +344,142 @@ class AudioTranscriberApp:
         messagebox.showerror("Erro", error_msg)
     
     def get_audio_devices(self):
-        """Obtém lista de dispositivos de áudio disponíveis"""
+        """Obtém lista de dispositivos de áudio disponíveis usando PyAudio"""
         try:
-            devices = sd.query_devices()
+            p = pyaudio.PyAudio()
             input_devices = []
             output_devices = []
             
-            for i, device in enumerate(devices):
-                device_info = {
-                    'index': i,
-                    'name': device['name'],
-                    'channels': device['max_input_channels'],
-                    'hostapi': device['hostapi']
-                }
-                
-                if device['max_input_channels'] > 0:
-                    input_devices.append(device_info)
-                    
-            return {
-                'input': input_devices,
-                'output': output_devices
-            }
-        except Exception as e:
-            print(f"Erro ao obter dispositivos: {e}")
-            return {'input': [], 'output': []}
-    
-    def populate_audio_devices(self):
-        """Popula as comboboxes com dispositivos disponíveis"""
-        # Microfone (dispositivos de entrada)
-        mic_options = []
-        for device in self.audio_devices['input']:
-            mic_options.append(f"{device['name']} (ID: {device['index']})")
-        
-        self.mic_combo['values'] = mic_options
-        if mic_options:
-            self.mic_combo.set(mic_options[0])
-        
-        # Para áudio do sistema, detectar dispositivos reais
-        try:
-            p = pyaudio.PyAudio()
-            system_options = []
-            
-            print("🔍 Procurando dispositivos de sistema...")
+            print("🔍 Detectando dispositivos de áudio com PyAudio...")
             
             for i in range(p.get_device_count()):
                 device_info = p.get_device_info_by_index(i)
                 device_name = device_info['name']
                 input_channels = device_info['maxInputChannels']
-                
-                print(f"  Dispositivo {i}: {device_name} - Canais: {input_channels}")
-                
-                # Procurar por dispositivos que podem capturar áudio do sistema
-                device_name_lower = device_name.lower()
                 output_channels = device_info['maxOutputChannels']
                 
-                # Palavras-chave para detectar dispositivos de sistema e fones
-                system_keywords = [
-                    'stereo mix', 'what u hear', 'loopback', 'system', 'speakers',
-                    'headphones', 'fone', 'audio', 'monitor', 'capture', 'recording',
-                    'realtek', 'intel', 'nvidia', 'amd', 'creative', 'sound blaster',
-                    'mapper', 'primary', 'driver', 'microsoft sound mapper'
-                ]
+                print(f"  Dispositivo {i}: {device_name}")
+                print(f"    Canais de entrada: {input_channels}")
+                print(f"    Canais de saída: {output_channels}")
                 
-                # Palavras-chave para detectar fones de ouvido
-                headphone_keywords = [
-                    'headphone', 'headphones', 'fone', 'earphone', 'earphones',
-                    'headset', 'logi', 'alto-falante', 'speaker', 'speakers'
-                ]
+                # Dispositivos de entrada (microfones)
+                if input_channels > 0:
+                    input_devices.append({
+                        'index': i,
+                        'name': device_name,
+                        'channels': input_channels,
+                        'hostapi': device_info['hostApi']
+                    })
+                    print(f"    ✅ Adicionado como dispositivo de entrada")
                 
-                # EXCLUIR microfones da lista de dispositivos de sistema
-                mic_keywords = ['microfone', 'mic']
-                is_microphone = any(keyword in device_name_lower for keyword in mic_keywords)
-                
-                # Verificar se é um dispositivo de sistema ou fone
-                is_system_device = any(keyword in device_name_lower for keyword in system_keywords)
-                is_headphone = any(keyword in device_name_lower for keyword in headphone_keywords)
-                
-                print(f"    Debug: {device_name}")
-                print(f"      is_microphone: {is_microphone}")
-                print(f"      is_system_device: {is_system_device}")
-                print(f"      is_headphone: {is_headphone}")
-                print(f"      input_channels: {input_channels}, output_channels: {output_channels}")
-                
-                # Adicionar TODOS os dispositivos que não são microfones
-                # Incluir dispositivos de entrada E saída
-                if not is_microphone:
-                    system_options.append(f"{device_name} (ID: {i})")
-                    if 'microsoft sound mapper' in device_name_lower and 'input' in device_name_lower:
-                        print(f"  ✅ Adicionado (Microsoft Sound Mapper Input): {device_name}")
-                    elif 'microsoft sound mapper' in device_name_lower and 'output' in device_name_lower:
-                        print(f"  ✅ Adicionado (Microsoft Sound Mapper Output): {device_name}")
-                    elif 'driver de captura' in device_name_lower:
-                        print(f"  ✅ Adicionado (Driver de Captura): {device_name}")
-                    elif is_headphone and output_channels > 0:
-                        print(f"  ✅ Adicionado (Fone de Ouvido - Saída): {device_name}")
-                    elif is_headphone and input_channels > 0:
-                        print(f"  ✅ Adicionado (Fone de Ouvido - Entrada): {device_name}")
-                    elif is_system_device:
-                        print(f"  ✅ Adicionado (Sistema): {device_name}")
-                    else:
-                        print(f"  ✅ Adicionado (Genérico): {device_name}")
-                elif is_microphone:
-                    print(f"  ❌ Excluído (Microfone): {device_name}")
-                else:
-                    print(f"  ❌ Excluído (Não é sistema nem fone): {device_name}")
+                # Dispositivos de saída
+                if output_channels > 0:
+                    output_devices.append({
+                        'index': i,
+                        'name': device_name,
+                        'channels': output_channels,
+                        'hostapi': device_info['hostApi']
+                    })
+                    print(f"    ✅ Adicionado como dispositivo de saída")
             
             p.terminate()
             
-            print(f"📋 Total de dispositivos de sistema encontrados: {len(system_options)}")
+            print(f"📋 Total de dispositivos encontrados:")
+            print(f"  Entrada (microfones): {len(input_devices)}")
+            print(f"  Saída (alto-falantes): {len(output_devices)}")
             
-            # Se não encontrou dispositivos específicos, adicionar opções genéricas
-            if not system_options:
-                system_options = ["Nenhum dispositivo de sistema encontrado", "Apenas Microfone"]
-            
-            self.system_combo['values'] = system_options
-            if system_options:
-                self.system_combo.set(system_options[0])
-                
+            return {
+                'input': input_devices,
+                'output': output_devices
+            }
         except Exception as e:
-            print(f"Erro ao detectar dispositivos de sistema: {e}")
-            system_options = ["Erro na detecção", "Apenas Microfone"]
-            self.system_combo['values'] = system_options
-            if system_options:
-                self.system_combo.set(system_options[0])
+            print(f"❌ Erro ao obter dispositivos: {e}")
+            return {'input': [], 'output': []}
+    
+    def populate_audio_devices(self):
+        """Popula as comboboxes com dispositivos disponíveis"""
+        print("🎤 Populando comboboxes de dispositivos de áudio...")
+        
+        # Microfone (dispositivos de entrada)
+        mic_options = []
+        for device in self.audio_devices['input']:
+            mic_options.append(f"{device['name']} (ID: {device['index']})")
+            print(f"  🎤 Microfone: {device['name']} (ID: {device['index']})")
+        
+        self.mic_combo['values'] = mic_options
+        if mic_options:
+            self.mic_combo.set(mic_options[0])
+            print(f"  ✅ Combobox de microfone populada com {len(mic_options)} dispositivos")
+        else:
+            print("  ⚠️ Nenhum dispositivo de microfone encontrado")
+        
+        # Áudio do sistema (dispositivos de saída + dispositivos especiais)
+        system_options = []
+        
+        # Adicionar dispositivos de saída como opções de sistema
+        for device in self.audio_devices['output']:
+            device_name_lower = device['name'].lower()
+            
+            # Palavras-chave para detectar microfones e excluí-los
+            mic_keywords = ['microfone', 'mic', 'headset mic', 'headphone mic']
+            is_microphone = any(keyword in device_name_lower for keyword in mic_keywords)
+            
+            if not is_microphone:
+                system_options.append(f"{device['name']} (ID: {device['index']})")
+                print(f"  🔊 Sistema: {device['name']} (ID: {device['index']})")
+        
+        # Adicionar opções especiais para captura de áudio do sistema
+        system_options.extend([
+            "Microsoft Sound Mapper (Padrão)",
+            "Driver de Captura (Padrão)",
+            "Stereo Mix (se disponível)"
+        ])
+        
+        # Se não encontrou dispositivos específicos, adicionar opções genéricas
+        if len(system_options) <= 3:  # Só as opções especiais
+            system_options.extend([
+                "Nenhum dispositivo de sistema encontrado",
+                "Apenas Microfone"
+            ])
+        
+        self.system_combo['values'] = system_options
+        if system_options:
+            self.system_combo.set(system_options[0])
+            print(f"  ✅ Combobox de sistema populada com {len(system_options)} opções")
+        else:
+            print("  ⚠️ Nenhuma opção de sistema encontrada")
+        
+        print("🎵 População de dispositivos concluída!")
+    
+    def debug_audio_devices(self):
+        """Função para debug dos dispositivos de áudio"""
+        print("\n🔍 DEBUG: Dispositivos de áudio detectados")
+        print("=" * 50)
+        
+        print("🎤 DISPOSITIVOS DE ENTRADA (MICROFONES):")
+        if self.audio_devices['input']:
+            for device in self.audio_devices['input']:
+                print(f"  ✅ {device['name']} (ID: {device['index']}) - {device['channels']} canais")
+        else:
+            print("  ❌ Nenhum dispositivo de entrada encontrado")
+        
+        print("\n🔊 DISPOSITIVOS DE SAÍDA (ALTO-FALANTES):")
+        if self.audio_devices['output']:
+            for device in self.audio_devices['output']:
+                print(f"  ✅ {device['name']} (ID: {device['index']}) - {device['channels']} canais")
+        else:
+            print("  ❌ Nenhum dispositivo de saída encontrado")
+        
+        print("\n📋 COMO ESTÃO AS COMBOBOXES:")
+        print(f"  Microfone: {self.mic_combo.get()}")
+        print(f"  Sistema: {self.system_combo.get()}")
+        print("=" * 50)
     
     def refresh_audio_devices(self):
         """Atualiza a lista de dispositivos de áudio"""
         self.audio_devices = self.get_audio_devices()
         self.populate_audio_devices()
+        self.debug_audio_devices()  # Debug após atualização
         messagebox.showinfo("Sucesso", "Dispositivos de áudio atualizados!")
     
     def list_all_devices(self):
